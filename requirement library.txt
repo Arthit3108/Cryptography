@@ -1,0 +1,4 @@
+requirement library
+  streamlit
+  pillow
+  numpy
