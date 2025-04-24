@@ -1,5 +1,38 @@
 import numpy as np
 from PIL import Image
+import os
+from dotenv import load_dotenv
+from cryptography.fernet import Fernet
+import base64, struct, datetime
+
+current_key_version = "2025-04-25"
+
+load_dotenv()
+
+def get_date(token_string):
+    
+
+    # แปลงจาก string --> bytes
+    token_str = token_string.strip("b'")[:-1]
+    token_bytes = token_str.encode()
+
+    # แก้ padding ให้ครบ (base64 ต้องหาร 4 ลงตัว)
+    padding = 4 - (len(token_bytes) % 4)
+    if padding != 4:
+        token_bytes += b"=" * padding
+
+    # decode & ดึง timestamp
+    decoded = base64.urlsafe_b64decode(token_bytes)
+    timestamp = struct.unpack(">Q", decoded[1:9])[0]
+    return datetime.datetime.fromtimestamp(timestamp).date()
+
+
+def get_key(version):
+    env_var = f"KEY_{version}"
+    key = os.getenv(env_var)
+    if key:
+        return key.encode()
+    raise ValueError("not found")
 
 
 def lfsr_index_generator(seed):

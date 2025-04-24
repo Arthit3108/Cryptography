@@ -1,9 +1,7 @@
 import streamlit as st
 from PIL import Image
 from cryptography.fernet import Fernet
-import secrets
 import ast
-
 
 
 from services_function_utlis import *
@@ -49,6 +47,7 @@ if uploaded_image is not None:
     st.image(image, caption="uploaded image", use_container_width=True)
 
     secret_key = st.text_input("Enter your secret key")
+    password = st.text_input("Enter your secret password")
     
 
     if secret_key is not None:
@@ -56,29 +55,41 @@ if uploaded_image is not None:
 
             # Decrypt
             try:
-                received = ast.literal_eval(secret_key)
-                # received = secret_key.encode()
-                # received = received.decode()
-                key_part, encrypted_part = received.split(b'||')
 
-                # สร้าง cipher ใหม่
-                cipher = Fernet(key_part)
+                date = str(get_date(secret_key))
 
-                # ถอดรหัส
-                decrypted_secret_key = cipher.decrypt(encrypted_part).decode()
+                key = get_key(date)
+                # st.write("key", key)
 
-                decrypted_channels = decrypt_image(
-                    encrypted_image_path="encrypted_color_image_all.png",
-                    secret_key=int(decrypted_secret_key),
+                cipher = Fernet(key)
+
+                secret_key = secret_key = ast.literal_eval(secret_key)
+                # st.write("sec", secret_key)
+                
+                # ถอดรหัส 
+                decrypted = cipher.decrypt(secret_key).decode()
+                # st.write("dec", decrypted)
+
+                secret_key, password_user = decrypted.split(":")
+
+                if password == password_user:
+                    decrypted_channels = decrypt_image(
+                        encrypted_image_path="encrypted_color_image_all.png",
+                        secret_key=int(secret_key),
                         output_path="decrypted_color_image_all.png"
-                )
+                    )
+                    encrypt_image = Image.open("decrypted_color_image_all.png")
+                    st.image(encrypt_image, caption="decrypt image", use_container_width=True)
+                    # st.write("pass") 
+                else:
+                    st.error("Invalid secret key or password format. Please enter secret key.") 
+                 
 
-                encrypt_image = Image.open("decrypted_color_image_all.png")
-                st.image(encrypt_image, caption="decrypt image", use_container_width=True) 
             except ValueError:
-                st.error("Invalid secret key format. Please enter secret key.")
+                st.error("Invalid secret key or password format. Please enter secret key.")
+                
             except Exception as e:
-                st.error("Invalid secret key format. Please enter secret key.")
+                st.error("Invalid secret key or password format. Please enter secret key.")
     
     # Secret key
 
