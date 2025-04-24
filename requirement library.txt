@@ -1,4 +1,5 @@
 requirement library
-  streamlit
-  pillow
-  numpy
+  
+- streamlit
+- pillow
+- numpy

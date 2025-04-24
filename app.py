@@ -1,9 +1,4 @@
 import streamlit as st
-from PIL import Image
-import numpy as np
-import random
-import os
-
 from services_function_utlis import *
 
 

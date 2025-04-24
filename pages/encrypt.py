@@ -1,8 +1,5 @@
 import streamlit as st
 from PIL import Image
-import numpy as np
-import random
-import os
 
 from services_function_utlis import *
 
@@ -60,3 +57,11 @@ if uploaded_image is not None:
         image = Image.open("encrypted_color_image_all.png")
         st.image(image, caption="encrypt image", use_container_width=True)
         st.text(f"Secret Key: {st.session_state.secret_key}")
+
+st.markdown("""
+<hr style="margin-top: 20px;">
+<div style="text-align: center; font-size: 13px; color: gray;">
+Created with ❤️ by Petch Pair Preaw | © 2025 ImageCrypt
+</div>
+""", unsafe_allow_html=True)
+

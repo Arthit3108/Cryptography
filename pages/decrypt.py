@@ -1,8 +1,6 @@
 import streamlit as st
 from PIL import Image
-import numpy as np
-import random
-import os
+
 
 from services_function_utlis import *
 
@@ -48,6 +46,13 @@ if uploaded_image is not None:
             st.image(encrypt_image, caption="decrypt image", use_container_width=True) 
     
     # Secret key
+
+st.markdown("""
+<hr style="margin-top: 20px;">
+<div style="text-align: center; font-size: 13px; color: gray;">
+Created with ❤️ by Petch Pair Preaw | © 2025 ImageCrypt
+</div>
+""", unsafe_allow_html=True)
 
 
  
