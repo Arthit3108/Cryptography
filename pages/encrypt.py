@@ -2,6 +2,8 @@ import streamlit as st
 from PIL import Image
 
 from services_function_utlis import *
+from cryptography.fernet import Fernet
+import secrets
 
 st.title("🔐 Encryption")
 
@@ -36,7 +38,20 @@ if uploaded_image is not None:
     if not st.session_state.encrypted:
         if st.button("Encryption", use_container_width=True):
             # Secret key
-            secret_key = 27048394946533223556478
+            
+            key = Fernet.generate_key()
+            cipher = Fernet(key)
+
+            secret_key = secrets.randbelow(10**23 - 10**22) + 10**22
+
+            text = str(secret_key)
+            encrypted = cipher.encrypt(text.encode())
+
+            combined = key + b'||' + encrypted
+
+            # Decrypt
+            # decrypted = cipher.decrypt(encrypted).decode()
+
             st.session_state.encrypted = True
             # Encryption
             encrypted_result = encrypt_image(
@@ -48,7 +63,7 @@ if uploaded_image is not None:
 
             # Mark encryption done
 
-            st.session_state.secret_key = secret_key  # Save key if needed
+            st.session_state.secret_key = combined  # Save key if needed
 
 
 

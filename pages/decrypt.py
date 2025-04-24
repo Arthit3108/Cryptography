@@ -1,5 +1,9 @@
 import streamlit as st
 from PIL import Image
+from cryptography.fernet import Fernet
+import secrets
+import ast
+
 
 
 from services_function_utlis import *
@@ -36,9 +40,22 @@ if uploaded_image is not None:
 
     if secret_key is not None:
         if st.button("Decrypt", use_container_width=True):
+
+            # Decrypt
+            received = ast.literal_eval(secret_key)
+            # received = secret_key.encode()
+            # received = received.decode()
+            key_part, encrypted_part = received.split(b'||')
+
+            # สร้าง cipher ใหม่
+            cipher = Fernet(key_part)
+
+            # ถอดรหัส
+            decrypted_secret_key = cipher.decrypt(encrypted_part).decode()
+
             decrypted_channels = decrypt_image(
                 encrypted_image_path="encrypted_color_image_all.png",
-                secret_key=int(secret_key),
+                secret_key=int(decrypted_secret_key),
                     output_path="decrypted_color_image_all.png"
             )
 
