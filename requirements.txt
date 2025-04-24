@@ -2,9 +2,4 @@ streamlit
 pillow
 numpy
 cryptography
-base64
-struct
-datetime
 python-dotenv
-os
-ast
