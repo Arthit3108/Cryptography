@@ -19,13 +19,13 @@ button[kind="secondary"]:hover {
 
 st.markdown("""
     <h1 style='padding: 10px; border-radius: 10px;'>
-        🖼️ Image Cryptography 😗 
+        🔐 Image Cryptography 
     </h1>
     """, unsafe_allow_html=True)
 
 st.markdown("""
 <div style="text-align: center; font-size: 16px; margin-bottom: 20px; margin-top: 20px; color: #bbbbbb;">
-🔐 Upload your image and choose whether to encrypt or decrypt it using a secure key.  
+ Upload your image and choose whether to encrypt or decrypt it using a secure key.  
 </div>
 """, unsafe_allow_html=True)
 
