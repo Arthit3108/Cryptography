@@ -10,6 +10,19 @@ from services_function_utlis import *
 
 st.title(" 🔓 Decryption")
 
+# Create two columns
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("🔑 Home", use_container_width=True):
+        st.switch_page("app.py") 
+
+
+with col2:
+    if st.button("🔐 Encryption", use_container_width=True):
+        st.switch_page("pages/decrypt.py") 
+
+
 st.markdown("""
 <style>
 button[kind="secondary"] {
@@ -42,25 +55,30 @@ if uploaded_image is not None:
         if st.button("Decrypt", use_container_width=True):
 
             # Decrypt
-            received = ast.literal_eval(secret_key)
-            # received = secret_key.encode()
-            # received = received.decode()
-            key_part, encrypted_part = received.split(b'||')
+            try:
+                received = ast.literal_eval(secret_key)
+                # received = secret_key.encode()
+                # received = received.decode()
+                key_part, encrypted_part = received.split(b'||')
 
-            # สร้าง cipher ใหม่
-            cipher = Fernet(key_part)
+                # สร้าง cipher ใหม่
+                cipher = Fernet(key_part)
 
-            # ถอดรหัส
-            decrypted_secret_key = cipher.decrypt(encrypted_part).decode()
+                # ถอดรหัส
+                decrypted_secret_key = cipher.decrypt(encrypted_part).decode()
 
-            decrypted_channels = decrypt_image(
-                encrypted_image_path="encrypted_color_image_all.png",
-                secret_key=int(decrypted_secret_key),
-                    output_path="decrypted_color_image_all.png"
-            )
+                decrypted_channels = decrypt_image(
+                    encrypted_image_path="encrypted_color_image_all.png",
+                    secret_key=int(decrypted_secret_key),
+                        output_path="decrypted_color_image_all.png"
+                )
 
-            encrypt_image = Image.open("decrypted_color_image_all.png")
-            st.image(encrypt_image, caption="decrypt image", use_container_width=True) 
+                encrypt_image = Image.open("decrypted_color_image_all.png")
+                st.image(encrypt_image, caption="decrypt image", use_container_width=True) 
+            except ValueError:
+                st.error("Invalid secret key format. Please enter secret key.")
+            except Exception as e:
+                st.error("Invalid secret key format. Please enter secret key.")
     
     # Secret key
 

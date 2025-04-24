@@ -19,7 +19,7 @@ button[kind="secondary"]:hover {
 
 st.markdown("""
     <h1 style='padding: 10px; border-radius: 10px;'>
-        🔐 Image Cryptography 
+        🔑 Image Cryptography 
     </h1>
     """, unsafe_allow_html=True)
 

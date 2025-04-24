@@ -7,6 +7,19 @@ import secrets
 
 st.title("🔐 Encryption")
 
+# Create two columns
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("🔑 Home", use_container_width=True):
+        st.switch_page("app.py") 
+
+
+with col2:
+    if st.button("🔓 Decryption", use_container_width=True):
+        st.switch_page("pages/decrypt.py") 
+
+
 st.markdown("""
 <style>
 button[kind="secondary"] {
