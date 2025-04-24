@@ -1,6 +1,0 @@
-requirement library
-  
-- streamlit
-- pillow
-- numpy
-- cryptography
