@@ -2,3 +2,8 @@ streamlit
 pillow
 numpy
 cryptography
+base64
+struct
+datetime
+dotenv
+os
