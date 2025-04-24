@@ -3,27 +3,27 @@ from PIL import Image
 import os
 from dotenv import load_dotenv
 from cryptography.fernet import Fernet
-import base64, struct, datetime
+
 
 current_key_version = "2025-04-25"
 
 load_dotenv()
 
 def get_date(token_string):
-    
+    import base64, struct, datetime, ast
 
-    # แปลงจาก string --> bytes
-    token_str = token_string.strip("b'")[:-1]
-    token_bytes = token_str.encode()
+    # ใช้ ast เพื่อแปลง b'...' ให้เป็น bytes
+    token_bytes = ast.literal_eval(token_string)
 
-    # แก้ padding ให้ครบ (base64 ต้องหาร 4 ลงตัว)
+    # แก้ padding base64
     padding = 4 - (len(token_bytes) % 4)
     if padding != 4:
         token_bytes += b"=" * padding
 
-    # decode & ดึง timestamp
+    # decode และดึง timestamp
     decoded = base64.urlsafe_b64decode(token_bytes)
     timestamp = struct.unpack(">Q", decoded[1:9])[0]
+
     return datetime.datetime.fromtimestamp(timestamp).date()
 
 

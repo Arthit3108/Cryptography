@@ -54,15 +54,13 @@ if uploaded_image is not None:
             
         # key = Fernet.generate_key()
         key = get_key(current_key_version)
+        # st.write("key", key)
         
         cipher = Fernet(key)
         
         secret_key = secrets.randbelow(10**23 - 10**22) + 10**22
         text = str(secret_key) + ":" + password
         encrypted = cipher.encrypt(text.encode())
-
-        # Decrypt
-        # decrypted = cipher.decrypt(encrypted).decode()
 
         st.session_state.encrypted = True
         # Encryption
