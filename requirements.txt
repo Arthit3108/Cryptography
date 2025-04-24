@@ -5,6 +5,6 @@ cryptography
 base64
 struct
 datetime
-dotenv
+python-dotenv
 os
 ast
