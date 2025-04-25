@@ -79,7 +79,7 @@ if uploaded_image is not None:
         if st.session_state.encrypted:
             image = Image.open("encrypted_color_image_all.png")
             st.image(image, caption="encrypt image", use_container_width=True)
-            st.text(f"Secret Key: \n {st.session_state.secret_key}")
+            st.text(f"Secret Key: \n{st.session_state.secret_key}")
 
 st.markdown("""
 <hr style="margin-top: 20px;">
