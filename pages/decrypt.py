@@ -57,7 +57,7 @@ if uploaded_image is not None:
             try:
                 # st.write("secret", secret_key)
                 date = str(get_date(secret_key))
-                st.write("date", date)
+                # st.write("date", date)
 
                 # key = get_key(date)
                 # st.write("key", key)
@@ -68,11 +68,11 @@ if uploaded_image is not None:
                 cipher = Fernet(key)
 
                 secret_key = secret_key = ast.literal_eval(secret_key)
-                st.write("sec", secret_key)
+                # st.write("sec", secret_key)
                 
                 # ถอดรหัส 
                 decrypted = cipher.decrypt(secret_key).decode()
-                st.write("dec", decrypted)
+                # st.write("dec", decrypted)
 
                 secret_key, password_user = decrypted.split(":")
 
@@ -84,7 +84,7 @@ if uploaded_image is not None:
                     )
                     encrypt_image = Image.open("decrypted_color_image_all.png")
                     st.image(encrypt_image, caption="decrypt image", use_container_width=True)
-                    st.write("pass") 
+                    # st.write("pass") 
                 else:
                     st.error("Invalid secret key or password format. Please enter secret key.") 
                  
