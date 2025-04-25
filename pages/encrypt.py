@@ -73,7 +73,7 @@ if uploaded_image is not None:
 
             # Mark encryption done
 
-        st.session_state.secret_key = encrypted # Save key if needed
+        st.session_state.secret_key = encrypted.decode() # Save key if needed
 
             # Show encrypted image and key if encryption was done
         if st.session_state.encrypted:

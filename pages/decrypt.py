@@ -67,7 +67,8 @@ if uploaded_image is not None:
 
                 cipher = Fernet(key)
 
-                secret_key = secret_key = ast.literal_eval(secret_key)
+                # secret_key = ast.literal_eval(secret_key)
+                secret_key = secret_key.encode()
                 # st.write("sec", secret_key)
                 
                 # ถอดรหัส 
