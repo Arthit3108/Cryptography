@@ -53,7 +53,8 @@ if uploaded_image is not None:
             # Secret key
             
         # key = Fernet.generate_key()
-        key = get_key(current_key_version)
+        # key = get_key(current_key_version)
+        key = st.secrets[current_version] 
         # st.write("key", key)
         
         cipher = Fernet(key)

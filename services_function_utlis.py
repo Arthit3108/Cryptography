@@ -3,28 +3,30 @@ from PIL import Image
 import os
 from dotenv import load_dotenv
 from cryptography.fernet import Fernet
+import streamlit as st
 
 
-current_key_version = "2025-04-25"
+# current_key_version = "2025-04-25"
+current_version = st.secrets["CURRENT_KEY_VERSION"]
 
 load_dotenv()
 
 def get_date(token_string):
-    import base64, struct, datetime, ast
+    import base64, struct, datetime
 
-    # ใช้ ast เพื่อแปลง b'...' ให้เป็น bytes
-    token_bytes = ast.literal_eval(token_string)
+    # แปลงจาก string --> bytes
+    token_str = token_string.strip("b'")[:-1]
+    token_bytes = token_str.encode()
 
-    # แก้ padding base64
+    # แก้ padding ให้ครบ (base64 ต้องหาร 4 ลงตัว)
     padding = 4 - (len(token_bytes) % 4)
     if padding != 4:
         token_bytes += b"=" * padding
 
-    # decode และดึง timestamp
+    # decode & ดึง timestamp
     decoded = base64.urlsafe_b64decode(token_bytes)
     timestamp = struct.unpack(">Q", decoded[1:9])[0]
-
-    return datetime.datetime.fromtimestamp(timestamp).date()
+    return datetime.datetime.fromtimestamp(timestamp).strftime("%Y_%m_%d")
 
 
 def get_key(version):
@@ -111,29 +113,68 @@ def divide_into_grid(channel, rows, cols, div):
 
     return grid
 
-def shift_bits_indices(channel, secret_key, rows, cols, channel_idx):
+# def shift_bits_indices(channel, secret_key, rows, cols, channel_idx):
+#     # Initialize the LFSR generator
+#     lfsr_gen = lfsr_index_generator(secret_key + channel_idx)
+#     shift_gen = lfsr_index_generator(secret_key - channel_idx)
+
+#     # Divide the channel into a 3x3 grid
+#     div = 0
+#     if rows < cols:
+#       div = cols // 60
+#     else :
+#       div = rows // 60
+#     grid = divide_into_grid(channel, rows, cols, div)
+
+#     # Divide the channel into a grid
+#     grid = divide_into_grid(channel, rows, cols, div)
+
+#     # Randomly select indices from the grid using the LFSR generator
+#     use_indices = (div * div) - 1
+#     selected_indices = [next(lfsr_gen) % len(grid) for _ in range(use_indices)]
+#     selected_indices = list(set(selected_indices))  # Ensure unique indices
+
+#     # Process each selected index
+#     for idx in selected_indices:
+#         start_row, end_row, start_col, end_col = grid[idx]
+
+#         # Flatten the subregion
+#         subregion = channel[start_row:end_row, start_col:end_col].flatten()
+
+#         # Determine the shift amount
+#         shift_amount = next(shift_gen) % 8  # Limit shift amount to [0, 7] for 8-bit pixels
+
+#         # Apply the right circular shift to each pixel in the subregion
+#         subregion = np.array([right_circular_shift(pixel, shift_amount, bit_width=8) for pixel in subregion], dtype=np.uint8)
+
+#         # Update the channel
+#         channel[start_row:end_row, start_col:end_col] = subregion.reshape(end_row - start_row, end_col - start_col)
+
+#     return channel
+
+
+def shift_bits_chunks(channel, secret_key, rows, cols, channel_idx):
     # Initialize the LFSR generator
     lfsr_gen = lfsr_index_generator(secret_key + channel_idx)
     shift_gen = lfsr_index_generator(secret_key - channel_idx)
 
-    # Divide the channel into a 3x3 grid
+    # Divide the channel - size of each pixel is about 60 x 60
     div = 0
-    if rows < cols:
+    if rows > cols:
       div = cols // 60
     else :
       div = rows // 60
-    grid = divide_into_grid(channel, rows, cols, div)
 
     # Divide the channel into a grid
     grid = divide_into_grid(channel, rows, cols, div)
 
-    # Randomly select indices from the grid using the LFSR generator
-    use_indices = (div * div) - 1
-    selected_indices = [next(lfsr_gen) % len(grid) for _ in range(use_indices)]
-    selected_indices = list(set(selected_indices))  # Ensure unique indices
+    # Randomly select chunks from the grid using the LFSR generator
+    use_chunks = (div * div) - 1
+    selected_chunks = [next(lfsr_gen) % len(grid) for _ in range(use_chunks)]
+    selected_chunks = list(set(selected_chunks))  # Ensure unique chunks
 
     # Process each selected index
-    for idx in selected_indices:
+    for idx in selected_chunks:
         start_row, end_row, start_col, end_col = grid[idx]
 
         # Flatten the subregion
@@ -143,37 +184,82 @@ def shift_bits_indices(channel, secret_key, rows, cols, channel_idx):
         shift_amount = next(shift_gen) % 8  # Limit shift amount to [0, 7] for 8-bit pixels
 
         # Apply the right circular shift to each pixel in the subregion
-        subregion = np.array([right_circular_shift(pixel, shift_amount, bit_width=8) for pixel in subregion], dtype=np.uint8)
+        subregion = np.array(
+            [
+                right_circular_shift(pixel, shift_amount, bit_width=8)
+                for pixel in subregion
+            ],
+            dtype=np.uint8
+        )
 
         # Update the channel
-        channel[start_row:end_row, start_col:end_col] = subregion.reshape(end_row - start_row, end_col - start_col)
+        channel[start_row:end_row, start_col:end_col] = subregion.reshape(
+            end_row - start_row, end_col - start_col
+        )
 
     return channel
 
+# def reverse_shift_bits_indices(channel, secret_key, rows, cols, channel_idx):
+#     # Initialize the LFSR generator
+#     lfsr_gen = lfsr_index_generator(secret_key + channel_idx)
+#     shift_gen = lfsr_index_generator(secret_key - channel_idx)
 
-def reverse_shift_bits_indices(channel, secret_key, rows, cols, channel_idx):
+#     # Divide the channel into a 3x3 grid
+#     div = 0
+#     if rows < cols:
+#       div = cols // 60
+#     else :
+#       div = rows // 60
+#     grid = divide_into_grid(channel, rows, cols, div)
+
+#     # Divide the channel into a 3x3 grid
+#     grid = divide_into_grid(channel, rows, cols, div)
+
+#     # Randomly select indices from the grid using the LFSR generator
+#     use_indices = (div * div) - 1
+#     selected_indices = [next(lfsr_gen) % len(grid) for _ in range(use_indices)]
+#     selected_indices = list(set(selected_indices))  # Ensure unique indices
+
+#     # Process each selected index
+#     for idx in selected_indices:
+#         start_row, end_row, start_col, end_col = grid[idx]
+
+#         # Flatten the subregion
+#         subregion = channel[start_row:end_row, start_col:end_col].flatten()
+
+#         # Determine the shift amount
+#         shift_amount = next(shift_gen) % 8
+
+#         # Apply the left circular shift to each pixel in the subregion
+#         subregion = np.array([left_circular_shift(pixel, shift_amount, bit_width=8) for pixel in subregion], dtype=np.uint8)
+
+#         # Update the channel
+#         channel[start_row:end_row, start_col:end_col] = subregion.reshape(end_row - start_row, end_col - start_col)
+
+#     return channel
+
+def reverse_shift_bits_chunks(channel, secret_key, rows, cols, channel_idx):
     # Initialize the LFSR generator
     lfsr_gen = lfsr_index_generator(secret_key + channel_idx)
     shift_gen = lfsr_index_generator(secret_key - channel_idx)
 
-    # Divide the channel into a 3x3 grid
+    # Divide the channel - size of each pixel is about 60 x 60
     div = 0
-    if rows < cols:
+    if rows > cols:
       div = cols // 60
     else :
       div = rows // 60
+
+    # Divide the channel into a grid
     grid = divide_into_grid(channel, rows, cols, div)
 
-    # Divide the channel into a 3x3 grid
-    grid = divide_into_grid(channel, rows, cols, div)
-
-    # Randomly select indices from the grid using the LFSR generator
-    use_indices = (div * div) - 1
-    selected_indices = [next(lfsr_gen) % len(grid) for _ in range(use_indices)]
-    selected_indices = list(set(selected_indices))  # Ensure unique indices
+    # Randomly select chunks from the grid using the LFSR generator
+    use_chunks = (div * div) - 1
+    selected_chunks = [next(lfsr_gen) % len(grid) for _ in range(use_chunks)]
+    selected_chunks = list(set(selected_chunks))  # Ensure unique chunks
 
     # Process each selected index
-    for idx in selected_indices:
+    for idx in selected_chunks:
         start_row, end_row, start_col, end_col = grid[idx]
 
         # Flatten the subregion
@@ -183,10 +269,18 @@ def reverse_shift_bits_indices(channel, secret_key, rows, cols, channel_idx):
         shift_amount = next(shift_gen) % 8
 
         # Apply the left circular shift to each pixel in the subregion
-        subregion = np.array([left_circular_shift(pixel, shift_amount, bit_width=8) for pixel in subregion], dtype=np.uint8)
+        subregion = np.array(
+            [
+                left_circular_shift(pixel, shift_amount, bit_width=8)
+                for pixel in subregion
+            ],
+            dtype=np.uint8
+        )
 
         # Update the channel
-        channel[start_row:end_row, start_col:end_col] = subregion.reshape(end_row - start_row, end_col - start_col)
+        channel[start_row:end_row, start_col:end_col] = subregion.reshape(
+            end_row - start_row, end_col - start_col
+        )
 
     return channel
 
@@ -197,27 +291,73 @@ def flip_all_bits(decimal_number):
     return flipped_number
 
 # swap and flip in indices with pesudo random
-def flip_bits_indices(channel_input, secret_key, rows, cols, channel_idx):
+# def flip_bits_indices(channel_input, secret_key, rows, cols, channel_idx):
+#     channel = channel_input.copy()
+
+#     # Initialize the LFSR generator
+#     lfsr_gen = lfsr_index_generator(secret_key + channel_idx)
+
+#     # Divide the channel into a 3x3 grid
+#     div = 0
+#     if rows < cols:
+#       div = cols // 30
+#     else :
+#       div = rows // 30
+#     grid = divide_into_grid(channel, rows, cols, div)
+
+#     # Randomly select indices from the grid using the LFSR generator
+#     use_indices = (div * div) - 1
+#     selected_indices = [next(lfsr_gen) % len(grid) for _ in range(use_indices)]
+#     selected_indices = list(set(selected_indices))  # Ensure unique indices
+
+
+#     for idx in selected_indices:
+#         start_row, end_row, start_col, end_col = grid[idx]
+
+#         # Flatten the subregion
+#         subregion = channel[start_row:end_row, start_col:end_col].flatten()
+
+#         if len(subregion) == 0:
+#           continue
+
+#         # Perform random swaps
+#         for _ in range(channel_idx):
+#             # Generate two random indices within the subregion
+#             idx1 = next(lfsr_gen) % len(subregion)
+#             idx2 = next(lfsr_gen) % len(subregion)
+
+#             if idx1 % channel_idx == 0 or idx2 % channel_idx == 0:
+#                 subregion = flip_all_bits(subregion)
+#                 # print("after flip : ", subregion)
+
+#         # Update the channel with the modified subregion
+#         channel[start_row:end_row, start_col:end_col] = subregion.reshape(end_row - start_row, end_col - start_col)
+
+#     return channel
+
+
+# swap and flip in chunks with pesudo random
+def flip_bits_chunks(channel_input, secret_key, rows, cols, channel_idx):
     channel = channel_input.copy()
 
     # Initialize the LFSR generator
     lfsr_gen = lfsr_index_generator(secret_key + channel_idx)
 
-    # Divide the channel into a 3x3 grid
+    # Divide the channel into a grid
     div = 0
-    if rows < cols:
+    if rows > cols:
       div = cols // 30
     else :
       div = rows // 30
     grid = divide_into_grid(channel, rows, cols, div)
 
-    # Randomly select indices from the grid using the LFSR generator
-    use_indices = (div * div) - 1
-    selected_indices = [next(lfsr_gen) % len(grid) for _ in range(use_indices)]
-    selected_indices = list(set(selected_indices))  # Ensure unique indices
+    # Randomly select chunks from the grid using the LFSR generator
+    use_chunks = (div * div) - 1
+    selected_chunks = [next(lfsr_gen) % len(grid) for _ in range(use_chunks)]
+    selected_chunks = list(set(selected_chunks))  # Ensure unique chunks
 
 
-    for idx in selected_indices:
+    for idx in selected_chunks:
         start_row, end_row, start_col, end_col = grid[idx]
 
         # Flatten the subregion
@@ -228,7 +368,7 @@ def flip_bits_indices(channel_input, secret_key, rows, cols, channel_idx):
 
         # Perform random swaps
         for _ in range(channel_idx):
-            # Generate two random indices within the subregion
+            # Generate two random chunks within the subregion
             idx1 = next(lfsr_gen) % len(subregion)
             idx2 = next(lfsr_gen) % len(subregion)
 
@@ -237,10 +377,11 @@ def flip_bits_indices(channel_input, secret_key, rows, cols, channel_idx):
                 # print("after flip : ", subregion)
 
         # Update the channel with the modified subregion
-        channel[start_row:end_row, start_col:end_col] = subregion.reshape(end_row - start_row, end_col - start_col)
+        channel[start_row:end_row, start_col:end_col] = subregion.reshape(
+            end_row - start_row, end_col - start_col
+        )
 
     return channel
-
 
 def xor_all_elements(channel, secret_key):
     rows, cols = channel.shape
@@ -279,11 +420,11 @@ def encrypt_image(image_file, secret_key, output_image_path):
         channel_data = image_array[:, :, channel]
         rows, cols = channel_data.shape
 
-        flip_image = flip_bits_indices(channel_data, secret_key, rows, cols, channel_idx)
+        flip_image = flip_bits_chunks(channel_data, secret_key, rows, cols, channel_idx)
         flip_channels.append(flip_image)
         print("flip : ", flip_image)
 
-        shifted_image = shift_bits_indices(flip_image, secret_key, rows, cols, channel_idx)
+        shifted_image = shift_bits_chunks(flip_image, secret_key, rows, cols, channel_idx)
         shift_channels.append(shifted_image)
         print("shifted_image : ", shifted_image)
 
@@ -324,10 +465,10 @@ def decrypt_image(encrypted_image_path, secret_key, output_path):
         # Step 2: Reverse XOR Operation
         xor_image = xor_all_elements(channel, secret_key)
 
-        unshifted_image = reverse_shift_bits_indices(channel, secret_key, rows, cols, channel_idx)
+        unshifted_image = reverse_shift_bits_chunks(channel, secret_key, rows, cols, channel_idx)
         print("flip : ", unshifted_image)
 
-        unfliped_image = flip_bits_indices(unshifted_image, secret_key, rows, cols, channel_idx)
+        unfliped_image = flip_bits_chunks(unshifted_image, secret_key, rows, cols, channel_idx)
         print("unfliped : ", unfliped_image)
 
         # Append the decrypted channel to the list
